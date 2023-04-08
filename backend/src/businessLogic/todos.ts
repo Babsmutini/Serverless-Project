@@ -32,16 +32,13 @@ export async function createTodo(
   // Get the current date and time
   const createdAt = new Date().toISOString()
 
-  // Generate an S3 attachment URL for the todo item
-  const s3AttachmentUrl = attachmentUtils.getAttachmentUrl(todoId)
-
   // Create a new todo item with the given properties
   const newItem: TodoItem = {
     userId,
     todoId,
     createdAt,
     done: false,
-    attachmentUrl: s3AttachmentUrl,
+    attachmentUrl: null,
     ...newTodo
   }
 
@@ -97,14 +94,49 @@ export async function deleteTodo(
 
 /**
  * Generates a pre-signed URL for uploading an attachment to a todo item.
- * @param todoId The ID of the todo item to generate the URL for.
- * @param userId The ID of the user generating the URL.
+ * @param attachmentId The ID of the attachment item to generate the URL for.
  * @returns The pre-signed URL for uploading an attachment to the todo item.
  */
 export async function createAttachmentPresignedUrl(
-  todoId: string,
-  userId: string
+  attachmentId: string,
 ): Promise<string> {
-  logger.info('Create attachment function called by user', userId, todoId)
-  return attachmentUtils.getUploadUrl(todoId)
+  try {
+    const uploadUrl = attachmentUtils.getUploadUrl(attachmentId)
+    logger.info(`Presigned Url is generated: ${uploadUrl}`)
+    return uploadUrl
+  } catch (error) {
+    const errorMsg = 'Error occurred when generating presigned Url to upload'
+    logger.error(errorMsg)
+    // return new CustomError(errorMsg, 500)
+  }
+  // logger.info('Create attachment function called by user', userId, todoId)
+  // return attachmentUtils.getUploadUrl(todoId)
 }
+
+/**
+ * Update attachment url
+ *
+ */
+export async function updateAttachmentUrl(
+  userId: string,
+  todoId: string,
+  attachmentId: string
+): Promise<void> {
+  try {
+    // Generate an S3 attachment URL for the todo item
+    const s3AttachmentUrl = await attachmentUtils.getAttachmentUrl(attachmentId);
+
+
+    await todosAccess.updateTodoAttachmentUrl(todoId, userId, s3AttachmentUrl);
+
+    logger.info(`Updating todo ${todoId} with attachment URL ${s3AttachmentUrl}`, {
+      userId,
+      todoId,
+    });
+
+  } catch (error) {
+    logger.error('Error occurred when updating todo item attachment URL', { error });
+    throw error;
+  }
+}
+
