@@ -37,14 +37,6 @@ provider:
   #   # Enable API Gateway logs
   #   restApi: true
 
-  iam:
-    role:
-      statements:
-        - Effect: Allow
-          Action:
-            - xray:PutTelemetryRecords
-          Resource: '*'
-
 custom:
   documentation:
     api:
@@ -58,19 +50,7 @@ custom:
         schema: ${file(models/create-todo-model.json)}
       - name: UpdateTodoRequest
         contentType: 'application/json'
-        schema:
-          required:
-            - name
-            - dueDate
-            - done
-          properties:
-            name:
-              minLength: 1
-              type: string
-            dueDate:
-              type: string
-            done:
-              type: boolean
+        schema: ${file(models/update-todo-model.json)}
 
 functions:
   Auth:
@@ -201,6 +181,8 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:Query
+          - dynamodb:GetItem
+          - dynamodb:UpdateItem
           - dynamodb:PutItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
       - Effect: Allow
